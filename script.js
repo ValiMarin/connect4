@@ -11,42 +11,7 @@ let gameMatrix;
 
 let turn = "red";
 
-function newGame() {
-  gameOverPanel.classList.add("hidden");
-
-  turn = "red";
-
-  if (gameMatrix) {
-    gameMatrix.forEach((row) =>
-      row.forEach((cellObj) => {
-        cellObj.cell?.remove();
-      })
-    );
-  }
-
-  gameMatrix = Array.from({ length: 6 }, () =>
-    Array.from({ length: 7 }, () => ({
-      cell: null,
-      value: "emptyCell",
-    }))
-  );
-
-  buttons.forEach((obj) => {
-    obj.btn.remove();
-  });
-
-  buttons.length = 0;
-
-  for (let i = 0; i < 6; ++i) {
-    for (let j = 0; j < 7; ++j) {
-      const div = document.createElement("div");
-      div.classList.add("grid-item", "emptyCell");
-      board.appendChild(div);
-
-      gameMatrix[i][j].cell = div;
-    }
-  }
-
+function newButtons() {
   for (let i = 0; i < 7; ++i) {
     const button = document.createElement("button");
     button.id = i;
@@ -64,6 +29,61 @@ function newGame() {
   }
 }
 
+function newCells() {
+  for (let i = 0; i < 6; ++i) {
+    for (let j = 0; j < 7; ++j) {
+      const div = document.createElement("div");
+      div.classList.add("grid-item", "emptyCell");
+      board.appendChild(div);
+
+      gameMatrix[i][j].cell = div;
+    }
+  }
+}
+
+function removeOldButtons() {
+  buttons.forEach((obj) => {
+    obj.btn.remove();
+  });
+
+  buttons.length = 0;
+}
+
+function removeOldMatrixCells() {
+  if (gameMatrix) {
+    gameMatrix.forEach((row) =>
+      row.forEach((cellObj) => {
+        cellObj.cell?.remove();
+      })
+    );
+  }
+}
+
+function newMatrix() {
+  gameMatrix = Array.from({ length: 6 }, () =>
+    Array.from({ length: 7 }, () => ({
+      cell: null,
+      value: "emptyCell",
+    }))
+  );
+}
+
+function newGame() {
+  gameOverPanel.classList.add("hidden");
+
+  turn = "red";
+
+  removeOldMatrixCells();
+
+  newMatrix();
+
+  removeOldButtons();
+
+  newCells();
+
+  newButtons();
+}
+
 function gameOver() {
   turn === "red"
     ? (winner.textContent = player1.value + " won!")
@@ -76,6 +96,18 @@ function gameOver() {
   }, 2000);
 }
 
+function checkBounderies(currentRowPos, currentColPos) {
+  if (
+    currentRowPos >= 0 &&
+    currentRowPos <= 5 &&
+    currentColPos >= 0 &&
+    currentColPos <= 6
+  )
+    return true;
+
+  return false;
+}
+
 function checkDirection(row, col, rowOffset, colOffset) {
   let streak = 0;
 
@@ -84,10 +116,7 @@ function checkDirection(row, col, rowOffset, colOffset) {
     const currentColPos = col + i * colOffset;
 
     if (
-      currentRowPos >= 0 &&
-      currentRowPos <= 5 &&
-      currentColPos >= 0 &&
-      currentColPos <= 6 &&
+      checkBounderies(currentRowPos, currentColPos) &&
       gameMatrix[currentRowPos][currentColPos].value ===
         gameMatrix[row][col].value
     ) {
@@ -120,7 +149,8 @@ function nextMove(id) {
     gameMatrix[buttons[col].ref][col].value = turn;
     boardCheck(buttons[col].ref, col);
     --buttons[col].ref;
-    turn = turn === "yellow" ? "red" : "yellow";
+    if (turn === "yellow") turn = "red";
+    else turn = "yellow";
   }
 }
 
