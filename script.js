@@ -5,7 +5,6 @@ const player2 = document.getElementById("player2");
 const gameOverPanel = document.getElementById("gameOverPanel");
 const winner = document.getElementById("winner");
 
-const cells = [];
 const buttons = [];
 
 let gameMatrix;
@@ -17,11 +16,20 @@ function newGame() {
 
   turn = "red";
 
-  cells.forEach((cell) => {
-    cell.remove();
-  });
+  if (gameMatrix) {
+    gameMatrix.forEach((row) =>
+      row.forEach((cellObj) => {
+        cellObj.cell?.remove();
+      })
+    );
+  }
 
-  cells.length = 0;
+  gameMatrix = Array.from({ length: 6 }, () =>
+    Array.from({ length: 7 }, () => ({
+      cell: null,
+      value: "emptyCell",
+    }))
+  );
 
   buttons.forEach((obj) => {
     obj.btn.remove();
@@ -29,31 +37,31 @@ function newGame() {
 
   buttons.length = 0;
 
-  for (let i = 0; i < 42; ++i) {
-    const div = document.createElement("div");
-    div.classList.add("grid-item", "emptyCell");
-    board.appendChild(div);
-    cells.push(div);
+  for (let i = 0; i < 6; ++i) {
+    for (let j = 0; j < 7; ++j) {
+      const div = document.createElement("div");
+      div.classList.add("grid-item", "emptyCell");
+      board.appendChild(div);
+
+      gameMatrix[i][j].cell = div;
+    }
   }
 
   for (let i = 0; i < 7; ++i) {
     const button = document.createElement("button");
+    button.id = i;
     button.classList.add("btn", "btn-primary");
     columnSelector.appendChild(button);
 
     buttons.push({
       btn: button,
-      ref: i + 35,
-      row: 5,
-      col: i,
+      ref: 5,
     });
 
     button.addEventListener("click", (e) => {
-      nextMove(buttons[i].col);
+      nextMove(e.target.id);
     });
   }
-
-  gameMatrix = Array.from({ length: 6 }, () => Array(7).fill(null));
 }
 
 function gameOver() {
@@ -68,131 +76,50 @@ function gameOver() {
   }, 2000);
 }
 
+function checkDirection(row, col, rowOffset, colOffset) {
+  let streak = 0;
+
+  for (let i = -3; i <= 3; ++i) {
+    const currentRowPos = row + i * rowOffset;
+    const currentColPos = col + i * colOffset;
+
+    if (
+      currentRowPos >= 0 &&
+      currentRowPos <= 5 &&
+      currentColPos >= 0 &&
+      currentColPos <= 6 &&
+      gameMatrix[currentRowPos][currentColPos].value ===
+        gameMatrix[row][col].value
+    ) {
+      ++streak;
+      if (streak === 4) return true;
+    } else {
+      streak = 0;
+    }
+  }
+
+  return false;
+}
+
 function boardCheck(row, col) {
-  let streak4, min, max;
-
-  //horizontal check
-  (min = col - 3), (max = col + 3);
-  streak4 = 0;
-
-  while (min < 0) ++min;
-
-  while (max > 6) --max;
-
-  for (let i = min; i <= max; ++i) {
-    if (
-      gameMatrix[row][i] !== null &&
-      gameMatrix[row][i] === gameMatrix[row][col]
-    ) {
-      ++streak4;
-
-      if (streak4 === 4) {
-        gameOver();
-        return;
-      }
-    } else streak4 = 0;
-  }
-
-  //vertical check
-  (min = row - 3), (max = row + 3);
-  streak4 = 0;
-
-  while (min < 0) ++min;
-
-  while (max > 5) --max;
-
-  for (let i = min; i <= max; ++i) {
-    if (
-      gameMatrix[i][col] !== null &&
-      gameMatrix[i][col] === gameMatrix[row][col]
-    ) {
-      ++streak4;
-
-      if (streak4 === 4) {
-        gameOver();
-        return;
-      }
-    } else streak4 = 0;
-  }
-
-  //main diagonal check
-  min = {
-    minRow: row - 3,
-    minCol: col - 3,
-  };
-  max = {
-    maxRow: row + 3,
-    maxCol: col + 3,
-  };
-  streak4 = 0;
-
-  while (min.minRow < 0 || min.minCol < 0) {
-    ++min.minRow;
-    ++min.minCol;
-  }
-
-  while (max.maxRow > 5 || max.maxCol > 6) {
-    --max.maxRow;
-    --max.maxCol;
-  }
-
-  for (let i = min.minRow; i <= max.maxRow; ++i) {
-    if (
-      gameMatrix[i][min.minCol] !== null &&
-      gameMatrix[i][min.minCol] === gameMatrix[row][col]
-    ) {
-      ++streak4;
-
-      if (streak4 === 4) {
-        gameOver();
-        return;
-      }
-    } else streak4 = 0;
-
-    ++min.minCol;
-  }
-
-  //secondary diagonal check
-  (min.minRow = row - 3),
-    (min.minCol = col + 3),
-    (max.maxRow = row + 3),
-    (max.maxCol = col - 3),
-    (streak4 = 0);
-
-  while (min.minRow < 0 || min.minCol > 6) {
-    ++min.minRow;
-    --min.minCol;
-  }
-
-  while (max.maxRow > 5 || max.maxCol < 0) {
-    --max.maxRow;
-    ++max.maxCol;
-  }
-
-  for (let i = min.minRow; i <= max.maxRow; ++i) {
-    if (
-      gameMatrix[i][min.minCol] !== null &&
-      gameMatrix[i][min.minCol] === gameMatrix[row][col]
-    ) {
-      ++streak4;
-
-      if (streak4 === 4) {
-        gameOver();
-        return;
-      }
-    } else streak4 = 0;
-
-    --min.minCol;
+  if (
+    checkDirection(row, col, 0, 1) ||
+    checkDirection(row, col, 1, 0) ||
+    checkDirection(row, col, 1, 1) ||
+    checkDirection(row, col, 1, -1)
+  ) {
+    gameOver();
   }
 }
 
-function nextMove(col) {
+function nextMove(id) {
+  const col = Number(id);
+
   if (buttons[col].ref >= 0) {
-    cells[buttons[col].ref].classList.replace("emptyCell", turn);
-    gameMatrix[buttons[col].row][col] = turn;
-    boardCheck(buttons[col].row, col);
-    buttons[col].ref -= 7;
-    --buttons[col].row;
+    gameMatrix[buttons[col].ref][col].cell.classList.replace("emptyCell", turn);
+    gameMatrix[buttons[col].ref][col].value = turn;
+    boardCheck(buttons[col].ref, col);
+    --buttons[col].ref;
     turn = turn === "yellow" ? "red" : "yellow";
   }
 }
