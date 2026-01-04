@@ -74,20 +74,15 @@ function newGame() {
   turn = "red";
 
   removeOldMatrixCells();
-
   newMatrix();
-
   removeOldButtons();
-
   newCells();
-
   newButtons();
 }
 
 function gameOver() {
-  turn === "red"
-    ? (winner.textContent = player1.value + " won!")
-    : (winner.textContent = player2.value + " won!");
+  if (turn === "red") winner.textContent = player1.value + " won!";
+  else winner.textContent = player2.value + " won!";
 
   gameOverPanel.classList.remove("hidden");
 
@@ -97,15 +92,12 @@ function gameOver() {
 }
 
 function checkBounderies(currentRowPos, currentColPos) {
-  if (
+  return (
     currentRowPos >= 0 &&
     currentRowPos <= 5 &&
     currentColPos >= 0 &&
     currentColPos <= 6
-  )
-    return true;
-
-  return false;
+  );
 }
 
 function checkDirection(row, col, rowOffset, colOffset) {
